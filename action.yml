@@ -68,7 +68,7 @@ outputs:
   processed_files:
     description: 'Newline-separated list of processed SARIF files'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'shield'

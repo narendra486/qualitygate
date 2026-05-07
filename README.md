@@ -226,7 +226,7 @@ For push-only workflows, omit `pull-requests: write` and set `pr_comment: false`
 
 For self-hosted runners:
 
-- Ensure Node.js 20 compatible GitHub Actions runner support.
+- Ensure Node.js 24 compatible GitHub Actions runner support.
 - Store SARIF files in the workspace before running QualityGate.
 - Avoid scanner uploads as the enforcement source; QualityGate reads local SARIF files only.
 
