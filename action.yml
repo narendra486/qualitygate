@@ -1,0 +1,52 @@
+name: 'Quality Gate'
+description: 'A GitHub Action to enforce quality gates based on SARIF security scan results'
+author: 'Your Name'
+inputs:
+  sarif_file:
+    description: 'Path to SARIF file(s) - single file or multiline list'
+    required: true
+  severity_threshold:
+    description: 'Severity threshold (low|medium|high|critical)'
+    required: true
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  pr_comment:
+    description: 'Whether to post PR comments (true/false)'
+    required: false
+    default: 'true'
+  fail_on_count:
+    description: 'Optional: Fail if total findings exceed this number'
+    required: false
+  ignore_rule_ids:
+    description: 'Comma-separated list of rule IDs to ignore'
+    required: false
+  ignore_paths:
+    description: 'Comma-separated glob patterns for paths to ignore'
+    required: false
+  deduplicate:
+    description: 'Whether to deduplicate findings (true/false)'
+    required: false
+    default: 'true'
+  baseline_file:
+    description: 'Optional SARIF baseline file for comparison'
+    required: false
+outputs:
+  total_findings:
+    description: 'Total number of findings'
+  critical_count:
+    description: 'Number of critical findings'
+  high_count:
+    description: 'Number of high findings'
+  medium_count:
+    description: 'Number of medium findings'
+  low_count:
+    description: 'Number of low findings'
+  quality_gate_status:
+    description: 'PASS or FAIL'
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
+branding:
+  icon: 'shield'
+  color: 'red'

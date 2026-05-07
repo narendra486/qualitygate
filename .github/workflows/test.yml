@@ -1,0 +1,117 @@
+name: Test Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      sarif_file:
+        description: 'SARIF file path'
+        required: true
+        default: 'test/example.sarif'
+      severity_threshold:
+        description: 'Severity threshold'
+        required: true
+        default: 'high'
+      pr_comment:
+        description: 'Post PR comment'
+        required: false
+        default: 'false'
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build action
+      run: npm run build
+
+    - name: Package action
+      run: npm run package
+
+    - name: Create test SARIF
+      run: |
+        mkdir -p test
+        cat > test/example.sarif << 'EOF'
+        {
+          "version": "2.1.0",
+          "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+          "runs": [
+            {
+              "tool": {
+                "driver": {
+                  "name": "Test Scanner",
+                  "version": "1.0.0"
+                }
+              },
+              "results": [
+                {
+                  "ruleId": "test-rule-1",
+                  "level": "error",
+                  "message": {
+                    "text": "Critical security issue found"
+                  },
+                  "locations": [
+                    {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "src/main.js"
+                        },
+                        "region": {
+                          "startLine": 10
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "ruleId": "test-rule-2",
+                  "level": "warning",
+                  "message": {
+                    "text": "Medium severity issue"
+                  },
+                  "locations": [
+                    {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "src/utils.js"
+                        },
+                        "region": {
+                          "startLine": 25
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+
+    - name: Test Quality Gate Action
+      uses: ./
+      id: quality-gate
+      with:
+        sarif_file: ${{ github.event.inputs.sarif_file }}
+        severity_threshold: ${{ github.event.inputs.severity_threshold }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        pr_comment: ${{ github.event.inputs.pr_comment }}
+
+    - name: Display outputs
+      run: |
+        echo "Total findings: ${{ steps.quality-gate.outputs.total_findings }}"
+        echo "Critical: ${{ steps.quality-gate.outputs.critical_count }}"
+        echo "High: ${{ steps.quality-gate.outputs.high_count }}"
+        echo "Medium: ${{ steps.quality-gate.outputs.medium_count }}"
+        echo "Low: ${{ steps.quality-gate.outputs.low_count }}"
+        echo "Status: ${{ steps.quality-gate.outputs.quality_gate_status }}"
