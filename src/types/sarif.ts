@@ -101,6 +101,8 @@ export interface SarifLog {
 
 export interface Finding {
     ruleId: string;
+    ruleName?: string;
+    description?: string;
     severity: 'low' | 'medium' | 'high' | 'critical';
     message: string;
     file: string;

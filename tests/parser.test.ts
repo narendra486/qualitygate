@@ -5,7 +5,7 @@ describe('SarifParser', () => {
     const parser = new SarifParser();
 
     it('should parse valid SARIF with findings', () => {
-        const sarifData = {
+        const sarifData: any = {
             version: '2.1.0',
             runs: [
                 {
@@ -72,7 +72,7 @@ describe('SarifParser', () => {
         ];
 
         testCases.forEach(({ level, expected }) => {
-            const sarifData = {
+            const sarifData: any = {
                 runs: [
                     {
                         tool: { driver: { name: 'Test' } },
@@ -96,5 +96,33 @@ describe('SarifParser', () => {
             const findings = parser.parse(sarifData);
             expect(findings[0].severity).toBe(expected);
         });
+    });
+
+    it('should use security-severity property when available', () => {
+        const sarifData: any = {
+            runs: [
+                {
+                    tool: { driver: { name: 'Test' } },
+                    results: [
+                        {
+                            ruleId: 'test-rule-2',
+                            properties: {
+                                'security-severity': 'critical'
+                            },
+                            message: { text: 'Critical code injection' },
+                            locations: [{
+                                physicalLocation: {
+                                    artifactLocation: { uri: 'test.js' },
+                                    region: { startLine: 1 }
+                                }
+                            }]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        const findings = parser.parse(sarifData);
+        expect(findings[0].severity).toBe('critical');
     });
 });

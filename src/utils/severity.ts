@@ -24,33 +24,22 @@ export class SeverityUtils {
         return this.getSeverityIndex(severity) >= this.getSeverityIndex(threshold);
     }
 
-    static getSeverityEmoji(severity: 'low' | 'medium' | 'high' | 'critical'): string {
-        switch (severity) {
-            case 'critical':
-                return '🔴';
-            case 'high':
-                return '🟠';
-            case 'medium':
-                return '🟡';
-            case 'low':
-                return '🔵';
-            default:
-                return '⚪';
-        }
+    static getSeverityLabel(severity: 'low' | 'medium' | 'high' | 'critical'): string {
+        return severity.charAt(0).toUpperCase() + severity.slice(1);
     }
 
     static getSeverityBadge(severity: 'low' | 'medium' | 'high' | 'critical'): string {
         switch (severity) {
             case 'critical':
-                return '![Critical](https://img.shields.io/badge/Critical-red)';
+                return '![Critical](https://img.shields.io/badge/Critical-red?style=flat-square)';
             case 'high':
-                return '![High](https://img.shields.io/badge/High-orange)';
+                return '![High](https://img.shields.io/badge/High-orange?style=flat-square)';
             case 'medium':
-                return '![Medium](https://img.shields.io/badge/Medium-yellow)';
+                return '![Medium](https://img.shields.io/badge/Medium-yellow?style=flat-square)';
             case 'low':
-                return '![Low](https://img.shields.io/badge/Low-blue)';
+                return '![Low](https://img.shields.io/badge/Low-blue?style=flat-square)';
             default:
-                return '![Unknown](https://img.shields.io/badge/Unknown-gray)';
+                return '![Unknown](https://img.shields.io/badge/Unknown-gray?style=flat-square)';
         }
     }
 }
