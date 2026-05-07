@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import { Finding } from '../types/sarif';
 import { SeverityUtils } from '../utils/severity';
+import { ErrorReporter, QualityGateIssues } from '../utils/errors';
 
 export class AnnotationsHandler {
     createAnnotations(findings: Finding[], maxAnnotations = 50): void {
@@ -21,7 +22,11 @@ export class AnnotationsHandler {
         }
 
         if (findings.length > maxAnnotations) {
-            core.warning(`Annotated ${maxAnnotations} of ${findings.length} finding(s) due to GitHub annotation limits`);
+            ErrorReporter.warning(
+                QualityGateIssues.githubIntegrationWarning(
+                    `Annotated ${maxAnnotations} of ${findings.length} finding(s) due to GitHub annotation limits`
+                )
+            );
         }
     }
 }

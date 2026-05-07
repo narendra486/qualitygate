@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import { glob } from 'fast-glob';
 import { minimatch } from 'minimatch';
+import { ErrorReporter, QualityGateIssues } from './errors';
 
 export class FileHandler {
     static async readFile(filePath: string): Promise<string> {
@@ -34,7 +35,9 @@ export class FileHandler {
             core.debug(`Glob pattern "${pattern}" matched ${files.length} file(s)`);
             return files;
         } catch (error) {
-            core.warning(`Failed to expand glob pattern "${pattern}": ${error}`);
+            ErrorReporter.warning(
+                QualityGateIssues.fileDiscoveryWarning(`Failed to expand glob pattern "${pattern}": ${error}`)
+            );
             return [];
         }
     }

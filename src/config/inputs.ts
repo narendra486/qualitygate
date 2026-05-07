@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import { ActionConfig, Severity } from '../types/sarif';
 import { SeverityUtils } from '../utils/severity';
+import { QualityGateError, QualityGateIssues } from '../utils/errors';
 
 function getBooleanInput(name: string, defaultValue: boolean): boolean {
     const value = core.getInput(name);
@@ -21,7 +22,7 @@ function getOptionalInteger(name: string): number | undefined {
     if (!raw) return undefined;
     const value = Number.parseInt(raw, 10);
     if (!Number.isFinite(value) || value < 0) {
-        throw new Error(`${name} must be a non-negative integer`);
+        throw new QualityGateError(QualityGateIssues.invalidInput(`${name} must be a non-negative integer`));
     }
     return value;
 }
@@ -29,7 +30,9 @@ function getOptionalInteger(name: string): number | undefined {
 export function readInputs(): ActionConfig {
     const severityThreshold = core.getInput('severity_threshold', { required: true }).trim().toLowerCase();
     if (!SeverityUtils.isValid(severityThreshold)) {
-        throw new Error('severity_threshold must be one of: low, medium, high, critical');
+        throw new QualityGateError(
+            QualityGateIssues.invalidInput('severity_threshold must be one of: low, medium, high, critical')
+        );
     }
 
     const maxFindingsDisplay = getOptionalInteger('max_findings_display') ?? 100;

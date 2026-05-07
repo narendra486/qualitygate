@@ -14,6 +14,7 @@ import { FileHandler } from './utils/file';
 import { Logger } from './utils/logger';
 import { RetryHandler } from './utils/retry';
 import { Finding } from './types/sarif';
+import { ErrorReporter, QualityGateError, QualityGateIssues } from './utils/errors';
 
 async function run(): Promise<void> {
     const startTime = Date.now();
@@ -31,7 +32,7 @@ async function run(): Promise<void> {
 
         const sarifFiles = await resolveSarifFiles(config.sarifFile);
         if (sarifFiles.length === 0) {
-            throw new Error('No SARIF files found from sarif_file input');
+            throw new QualityGateError(QualityGateIssues.noSarifFiles('No SARIF files found from sarif_file input'));
         }
 
         const aggregator = new SarifAggregator();
@@ -93,20 +94,23 @@ async function run(): Promise<void> {
                 delayMs: 1000,
             });
         } else if (config.prComment) {
-            Logger.warning('pr_comment=true but github_token was not provided; skipping PR comment');
+            ErrorReporter.warning(
+                QualityGateIssues.githubIntegrationWarning(
+                    'pr_comment=true but github_token was not provided; skipping PR comment'
+                )
+            );
         }
 
         if (!result.passed) {
             const message = evaluator.generateSummary(result);
-            core.setFailed(`Quality gate failed: ${message}`);
+            ErrorReporter.setFailed(QualityGateIssues.qualityGateFailed(message));
             process.exit(1);
         }
 
         Logger.info(evaluator.generateSummary(result));
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        Logger.error(message);
-        core.setFailed(`Action failed: ${message}`);
+        const issue = ErrorReporter.fromUnknown(error);
+        ErrorReporter.setFailed(issue);
         process.exit(1);
     }
 }

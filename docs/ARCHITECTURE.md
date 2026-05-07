@@ -54,3 +54,28 @@ New scanner behavior should be added in `parser/normalizer.ts` only when SARIF f
 ## Security Model
 
 QualityGate performs no shell execution using user inputs. File inputs are resolved through filesystem APIs and `fast-glob`. Markdown output is escaped for table-sensitive characters. GitHub API operations use retry logic and least-privilege token permissions.
+
+## Error Handling
+
+QualityGate uses standard GitHub Actions workflow commands through `@actions/core`:
+
+- `core.error()` for action errors
+- `core.warning()` for recoverable warnings
+- `core.setFailed()` and `process.exit(1)` for blocking failures
+
+All application-level issues use the same format:
+
+```text
+[QG###] Short title: actionable message
+```
+
+| Code | Level | Description |
+| ---- | ----- | ----------- |
+| `QG001` | Error | Invalid input configuration. |
+| `QG002` | Error | No SARIF files discovered. |
+| `QG003` | Warning | SARIF file/result is malformed or non-standard. |
+| `QG004` | Error | Quality gate policy failed. |
+| `QG005` | Warning | GitHub API/comment/check integration warning. |
+| `QG006` | Warning | Step summary warning. |
+| `QG007` | Warning | File discovery warning. |
+| `QG999` | Error | Unexpected action failure. |

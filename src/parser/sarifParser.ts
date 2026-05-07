@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
 import { Finding, SarifLog, SarifMetadata } from '../types/sarif';
 import { SarifNormalizer } from './normalizer';
+import { ErrorReporter, QualityGateIssues } from '../utils/errors';
 
 export class SarifParser {
     private readonly normalizer = new SarifNormalizer();
@@ -16,11 +16,15 @@ export class SarifParser {
         const findings: Finding[] = [];
 
         if (sarifData.version && sarifData.version !== '2.1.0') {
-            core.warning(`${sarifFile} declares SARIF ${sarifData.version}; QualityGate expects 2.1.0 but will parse best-effort`);
+            ErrorReporter.warning(
+                QualityGateIssues.malformedSarif(
+                    `${sarifFile} declares SARIF ${sarifData.version}; QualityGate expects 2.1.0 but will parse best-effort`
+                )
+            );
         }
 
         if (!sarifData.runs?.length) {
-            core.warning(`No SARIF runs found in ${sarifFile}`);
+            ErrorReporter.warning(QualityGateIssues.malformedSarif(`No SARIF runs found in ${sarifFile}`));
             return { findings, metadata };
         }
 
@@ -35,7 +39,11 @@ export class SarifParser {
                     const finding = this.normalizer.normalizeResult(result, run, runIndex, resultIndex, sarifFile);
                     if (finding) findings.push(finding);
                 } catch (error) {
-                    core.warning(`Skipped malformed SARIF result ${resultIndex} in ${sarifFile}: ${error instanceof Error ? error.message : String(error)}`);
+                    ErrorReporter.warning(
+                        QualityGateIssues.malformedSarif(
+                            `Skipped result ${resultIndex} in ${sarifFile}: ${error instanceof Error ? error.message : String(error)}`
+                        )
+                    );
                 }
             });
         });

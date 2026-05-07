@@ -266,6 +266,27 @@ The marketplace entrypoint is `dist/index.js`, produced with `@vercel/ncc`.
 | Baseline not suppressing | Baseline matching uses stable fingerprints from tool, rule, file, line, and message. |
 | Malformed SARIF | QualityGate skips malformed files with warnings and continues processing valid SARIF. |
 
+## Error Format
+
+QualityGate uses GitHub-native annotations for action errors and warnings. Messages follow this format:
+
+```text
+[QG004] Quality Gate failed: ❌ FAIL | Threshold: high | Critical: 0 | High: 1 | Medium: 0 | Low: 0
+```
+
+| Code | Level | Meaning |
+| ---- | ----- | ------- |
+| `QG001` | Error | Invalid QualityGate input, such as an unsupported severity or invalid integer. |
+| `QG002` | Error | No SARIF files were found from `sarif_file`. |
+| `QG003` | Warning | Malformed or non-standard SARIF content was skipped or parsed best-effort. |
+| `QG004` | Error | The quality gate failed because findings exceeded policy. |
+| `QG005` | Warning | GitHub integration issue, such as skipped PR comments or check-run creation failure. |
+| `QG006` | Warning | Step summary could not be written. |
+| `QG007` | Warning | SARIF file discovery issue, such as an invalid glob pattern. |
+| `QG999` | Error | Unexpected QualityGate action failure. |
+
+Errors use `core.error()` and `core.setFailed()`; blocking failures also exit with `process.exit(1)`. Warnings use `core.warning()`.
+
 ## License
 
 MIT

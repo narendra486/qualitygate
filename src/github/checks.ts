@@ -1,7 +1,7 @@
-import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Finding, QualityGateResult } from '../types/sarif';
 import { RetryHandler } from '../utils/retry';
+import { ErrorReporter, QualityGateIssues } from '../utils/errors';
 
 export class ChecksHandler {
     private readonly octokit: ReturnType<typeof github.getOctokit>;
@@ -32,7 +32,11 @@ export class ChecksHandler {
                 { maxAttempts: 3, delayMs: 750 }
             );
         } catch (error) {
-            core.warning(`Unable to create check run: ${error instanceof Error ? error.message : String(error)}`);
+            ErrorReporter.warning(
+                QualityGateIssues.githubIntegrationWarning(
+                    `Unable to create check run: ${error instanceof Error ? error.message : String(error)}`
+                )
+            );
         }
     }
 

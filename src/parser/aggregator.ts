@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import { AggregationResult, SarifLog } from '../types/sarif';
 import { FileHandler } from '../utils/file';
 import { SarifParser } from './sarifParser';
+import { ErrorReporter, QualityGateIssues } from '../utils/errors';
 
 export class SarifAggregator {
     private readonly parser = new SarifParser();
@@ -35,7 +36,7 @@ export class SarifAggregator {
                     malformed: true,
                     error: message,
                 });
-                core.warning(`Skipping malformed SARIF file ${file}: ${message}`);
+                ErrorReporter.warning(QualityGateIssues.malformedSarif(`Skipping ${file}: ${message}`));
             }
         }
 
