@@ -52,6 +52,21 @@ export class FileHandler {
         return resolved;
     }
 
+    static async collectSarifFilesFromPath(pathOrDir: string): Promise<string[]> {
+        if (!fs.existsSync(pathOrDir)) {
+            return [];
+        }
+
+        const stats = fs.statSync(pathOrDir);
+        if (stats.isDirectory()) {
+            const files = await glob('**/*.sarif', { cwd: pathOrDir, absolute: true, onlyFiles: true });
+            core.debug(`Directory "${pathOrDir}" contains ${files.length} SARIF file(s)`);
+            return files;
+        }
+
+        return [pathOrDir];
+    }
+
     static shouldIgnore(filePath: string, ignorePatterns: string[]): boolean {
         for (const pattern of ignorePatterns) {
             if (minimatch(filePath, pattern)) {

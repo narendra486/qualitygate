@@ -83,6 +83,18 @@ class FileHandler {
         }
         return resolved;
     }
+    static async collectSarifFilesFromPath(pathOrDir) {
+        if (!fs.existsSync(pathOrDir)) {
+            return [];
+        }
+        const stats = fs.statSync(pathOrDir);
+        if (stats.isDirectory()) {
+            const files = await (0, fast_glob_1.glob)('**/*.sarif', { cwd: pathOrDir, absolute: true, onlyFiles: true });
+            core.debug(`Directory "${pathOrDir}" contains ${files.length} SARIF file(s)`);
+            return files;
+        }
+        return [pathOrDir];
+    }
     static shouldIgnore(filePath, ignorePatterns) {
         for (const pattern of ignorePatterns) {
             if ((0, minimatch_1.minimatch)(filePath, pattern)) {

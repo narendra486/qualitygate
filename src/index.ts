@@ -150,9 +150,11 @@ async function resolveSarifFiles(input: string): Promise<string[]> {
             const globFiles = await FileHandler.expandGlob(pattern);
             files.push(...globFiles);
         } else {
-            // Direct file path
-            if (FileHandler.resolvePaths([pattern]).length > 0) {
-                files.push(pattern);
+            // Direct file path or directory path
+            const resolvedPaths = FileHandler.resolvePaths([pattern]);
+            if (resolvedPaths.length > 0) {
+                const matchedFiles = await FileHandler.collectSarifFilesFromPath(resolvedPaths[0]);
+                files.push(...matchedFiles);
             }
         }
     }
