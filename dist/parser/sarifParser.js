@@ -55,7 +55,7 @@ class SarifParser {
                 continue;
             }
             for (const result of run.results) {
-                const finding = this.parseResult(result);
+                const finding = this.parseResult(result, run);
                 if (finding) {
                     findings.push(finding);
                 }
@@ -63,20 +63,24 @@ class SarifParser {
         }
         return findings;
     }
-    parseResult(result) {
+    parseResult(result, run) {
         try {
             const ruleId = result.ruleId || result.rule?.id || 'unknown';
-            const level = result.level || 'note';
+            const ruleName = this.extractRuleName(result, run, ruleId);
+            const severitySource = this.extractSeverityLevel(result);
             const message = this.extractMessage(result.message);
+            const description = this.extractDescription(result, message);
             const location = this.extractLocation(result.locations);
             if (!message) {
                 core.debug(`Skipping result without message: ${ruleId}`);
                 return null;
             }
-            const severity = this.normalizeSeverity(level);
+            const severity = this.normalizeSeverity(severitySource);
             const uniqueId = this.generateUniqueId(ruleId, location.file, location.line);
             return {
                 ruleId,
+                ruleName,
+                description,
                 severity,
                 message,
                 file: location.file,
@@ -103,6 +107,44 @@ class SarifParser {
         }
         return '';
     }
+    extractDescription(result, fallback) {
+        if (result.properties?.description) {
+            return result.properties.description;
+        }
+        if (result.help?.text) {
+            return result.help.text;
+        }
+        if (result.help?.markdown) {
+            return result.help.markdown;
+        }
+        if (result.fullDescription?.text) {
+            return result.fullDescription.text;
+        }
+        if (result.fullDescription?.markdown) {
+            return result.fullDescription.markdown;
+        }
+        return fallback;
+    }
+    extractRuleName(result, run, ruleId) {
+        if (result.rule?.name) {
+            return result.rule.name;
+        }
+        if (result.ruleIndex !== undefined && run?.tool?.driver?.rules) {
+            const rule = run.tool.driver.rules[result.ruleIndex];
+            if (rule?.name) {
+                return rule.name;
+            }
+        }
+        return result.rule?.id || ruleId;
+    }
+    extractSeverityLevel(result) {
+        const props = result.properties || {};
+        return (props['security-severity'] ||
+            props.securitySeverity ||
+            props.severity ||
+            result.level ||
+            'note');
+    }
     extractLocation(locations) {
         if (!locations || locations.length === 0) {
             return { file: 'unknown', line: 1 };
@@ -118,18 +160,21 @@ class SarifParser {
         return { file, line, column };
     }
     normalizeSeverity(level) {
-        const normalized = level.toLowerCase();
+        const normalized = String(level).toLowerCase();
         switch (normalized) {
-            case 'error':
-                return 'high';
-            case 'warning':
-                return 'medium';
-            case 'note':
-            case 'none':
-                return 'low';
             case 'critical':
             case 'critical-severity':
                 return 'critical';
+            case 'high':
+            case 'error':
+                return 'high';
+            case 'medium':
+            case 'warning':
+                return 'medium';
+            case 'low':
+            case 'note':
+            case 'none':
+                return 'low';
             default:
                 return 'low';
         }

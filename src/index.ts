@@ -124,6 +124,8 @@ async function run(): Promise<void> {
             const summary = evaluator.generateSummary(result);
             Logger.error(summary);
             core.setFailed(`Quality gate failed: ${summary}`);
+            process.exitCode = 1;
+            return;
         } else {
             Logger.info('Quality gate passed');
         }

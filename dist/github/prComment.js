@@ -56,18 +56,27 @@ class PrCommentHandler {
         const { owner, repo } = this.context.repo;
         try {
             const formatter = new markdown_1.MarkdownFormatter();
-            const body = formatter.formatPrComment(counts, findings, passed, threshold);
+            const body = `${formatter.formatPrComment(counts, findings, passed, threshold)}\n\n<!-- qualitygate-action-comment -->`;
             // Check for existing comment
             const comments = await this.listComments(owner, repo, prNumber);
-            const existingComment = comments.find(c => c.body?.includes('# Quality Gate'));
-            if (existingComment) {
+            const existingComments = comments.filter(c => c.body?.includes('<!-- qualitygate-action-comment -->'));
+            if (existingComments.length > 0) {
+                const [firstComment, ...duplicateComments] = existingComments;
                 await this.octokit.rest.issues.updateComment({
                     owner,
                     repo,
-                    comment_id: existingComment.id,
+                    comment_id: firstComment.id,
                     body,
                 });
-                core.info(`Updated existing PR comment (ID: ${existingComment.id})`);
+                core.info(`Updated existing PR comment (ID: ${firstComment.id})`);
+                for (const duplicate of duplicateComments) {
+                    await this.octokit.rest.issues.deleteComment({
+                        owner,
+                        repo,
+                        comment_id: duplicate.id,
+                    });
+                    core.info(`Deleted duplicate PR comment (ID: ${duplicate.id})`);
+                }
             }
             else {
                 await this.octokit.rest.issues.createComment({
