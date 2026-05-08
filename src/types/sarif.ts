@@ -98,6 +98,13 @@ export interface SarifRun {
             semanticVersion?: string;
             properties?: Record<string, unknown>;
         };
+        extensions?: Array<{
+            name?: string;
+            version?: string;
+            semanticVersion?: string;
+            rules?: SarifRule[];
+            properties?: Record<string, unknown>;
+        }>;
     };
     results?: SarifResult[];
     invocations?: Array<{

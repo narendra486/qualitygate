@@ -68,7 +68,10 @@ export class SarifNormalizer {
     }
 
     private ruleFor(run: SarifRun, ruleIndex: number | undefined, ruleId: string) {
-        const rules = run.tool?.driver?.rules ?? [];
+        const rules = [
+            ...(run.tool?.driver?.rules ?? []),
+            ...((run.tool?.extensions ?? []).flatMap(extension => extension.rules ?? [])),
+        ];
         if (typeof ruleIndex === 'number' && rules[ruleIndex]) return rules[ruleIndex];
         return rules.find(rule => rule.id === ruleId || rule.name === ruleId);
     }
