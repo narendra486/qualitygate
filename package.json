@@ -28,12 +28,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/QualityGate.git"
+    "url": "https://github.com/narendra486/qualitygate.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/QualityGate/issues"
+    "url": "https://github.com/narendra486/qualitygate/issues"
   },
-  "homepage": "https://github.com/your-org/QualityGate#readme",
+  "homepage": "https://github.com/narendra486/qualitygate#readme",
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.1",

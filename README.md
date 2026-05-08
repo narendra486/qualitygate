@@ -2,271 +2,147 @@
 
 **QualityGate - Universal SARIF Security Quality Gate**
 
-Enterprise-grade GitHub Action for SARIF-based security quality gates supporting CodeQL, Snyk, Trivy, Semgrep, Checkov, Grype, Kubescape, DevSkim, and other SARIF 2.1.0 scanners.
+Lightweight GitHub Action for enforcing SARIF-based security quality gates. It works from SARIF files only and does not require GitHub Advanced Security APIs.
 
-QualityGate works only from SARIF files. It does not require GitHub Advanced Security APIs and works on GitHub-hosted and self-hosted runners.
-
-## Features
-
-- Parse SARIF 2.1.0 files from multiple scanners
-- Aggregate single files, multiline lists, directories, and globs
-- Support multiple SARIF runs per file
-- Normalize SARIF severity across scanners
-- Deduplicate findings with stable fingerprints
-- Ignore configured rules and paths
-- Generate professional PR comments with badges, emojis, collapsible sections, metadata, and truncation
-- Generate GitHub Step Summary with threshold configuration, blocked status, duration, and processed files
-- Emit GitHub workflow annotations and optional check runs
-- Fail workflows with `core.setFailed()` and `process.exit(1)`
-- Export machine-readable JSON reports
-
-## Quick Start
+## Usage
 
 ```yaml
-name: Security
+- name: QualityGate
+  uses: narendra486/qualitygate@v1
+  with:
+    sarif_file: codeql-results.sarif
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
 
-on:
-  pull_request:
-  push:
-    branches:
-      - main
+Default behavior:
 
-permissions:
-  contents: read
-  pull-requests: write
-  checks: write
+- `severity_threshold: high`
+- `mode: block`
+- `pr_comment: true`
+- `deduplicate: true`
+- `enable_annotations: true`
+- `enable_step_summary: true`
 
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Default `severity_threshold: high` blocks high and critical findings. To also block medium findings:
 
-      - name: Quality Gate
-        uses: your-org/QualityGate@v1
-        with:
-          sarif_file: results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          enable_annotations: true
-          enable_step_summary: true
+```yaml
+- name: QualityGate
+  uses: narendra486/qualitygate@v1
+  with:
+    sarif_file: codeql-results.sarif
+    severity_threshold: medium
+    github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | ----- | -------- | ------- | ----------- |
-| `sarif_file` | Yes | | Single SARIF file, multiline list, directory, or glob. Supports `.sarif` and `.sarif.json`. |
-| `severity_threshold` | No | `high` | One of `low`, `medium`, `high`, `critical`. Default `high` blocks high and critical findings. Set `medium` to also block medium findings. |
-| `mode` | No | `block` | `block` fails the workflow with `exit 1`; `report` posts results without failing. |
-| `github_token` | No | | Token for PR comments and optional check runs. |
-| `pr_comment` | No | `true` | Optional. Post or update a PR comment. Set `false` to disable comments. |
-| `fail_on_count` | No | | Fail when total findings exceed this integer. |
+| `sarif_file` | Yes | | SARIF file, directory, glob, or multiline list. |
+| `severity_threshold` | No | `high` | `low`, `medium`, `high`, or `critical`. |
+| `mode` | No | `block` | `block` exits with failure; `report` comments without failing. |
+| `github_token` | No | | Token for PR comments and check runs. |
+| `pr_comment` | No | `true` | Set `false` to disable PR comments. |
+| `fail_on_count` | No | | Fail if total findings exceed this integer. |
 | `ignore_rule_ids` | No | | Comma-separated rule IDs to ignore. |
-| `ignore_paths` | No | | Comma-separated glob patterns for finding paths to ignore. |
-| `deduplicate` | No | `true` | Optional. Deduplicate findings before evaluation. Set `false` only if every scanner occurrence should count separately. |
-| `enable_annotations` | No | `true` | Create workflow annotations for findings. |
+| `ignore_paths` | No | | Comma-separated glob patterns to ignore. |
+| `deduplicate` | No | `true` | Set `false` to count every scanner occurrence. |
+| `enable_annotations` | No | `true` | Emit GitHub workflow annotations. |
 | `enable_step_summary` | No | `true` | Write GitHub Step Summary. |
-| `markdown_template` | No | | Reserved for custom enterprise markdown templates. |
-| `max_findings_display` | No | `100` | Maximum findings displayed in comments and summaries. |
-| `json_export_file` | No | | Optional path for a JSON report artifact. |
+| `markdown_template` | No | | Optional custom PR comment template path. |
+| `max_findings_display` | No | `100` | Maximum findings shown in PR comment. |
+| `json_export_file` | No | | Optional JSON report path. |
 
 ## Outputs
 
 | Output | Description |
 | ------ | ----------- |
-| `total_findings` | Total finding count after filtering and deduplication. |
+| `total_findings` | Total findings after filtering and deduplication. |
 | `critical_count` | Critical finding count. |
 | `high_count` | High finding count. |
 | `medium_count` | Medium finding count. |
 | `low_count` | Low finding count. |
 | `quality_gate_status` | `PASS` or `FAIL`. |
-| `blocked` | `true` when the quality gate failed. |
+| `blocked` | `true` when policy failed. |
 | `processed_files` | Newline-separated processed SARIF files. |
 
-## Quality Gate Logic
-
-| Threshold | Workflow fails on |
-| --------- | ----------------- |
-| `critical` | Critical findings |
-| `high` | High and critical findings |
-| `medium` | Medium, high, and critical findings |
-| `low` | Low, medium, high, and critical findings |
-
-`fail_on_count` is evaluated in addition to severity thresholding.
-
-## Enforcement Mode
-
-QualityGate has two simple modes:
-
-| Mode | Workflow result | PR blocking |
-| ---- | --------------- | ----------- |
-| `block` | Fails with `core.setFailed()` and `process.exit(1)` when policy fails. | Blocks merge when the workflow check is required. |
-| `report` | Emits a warning and exits successfully when policy fails. | Does not block merge. |
-
-Default:
+## Blocking
 
 ```yaml
 mode: block
 ```
 
-## Severity Normalization
+`block` is the default. When policy fails, QualityGate calls `core.setFailed()` and `process.exit(1)`.
 
-| SARIF level | Normalized severity |
-| ----------- | ------------------- |
+```yaml
+mode: report
+```
+
+`report` posts results and exits successfully.
+
+## Severity Logic
+
+| Threshold | Fails on |
+| --------- | -------- |
+| `critical` | critical |
+| `high` | high, critical |
+| `medium` | medium, high, critical |
+| `low` | low, medium, high, critical |
+
+SARIF levels are normalized as:
+
+| SARIF level | Severity |
+| ----------- | -------- |
 | `error` | `high` |
 | `warning` | `medium` |
 | `note` / `none` | `low` |
 
 Numeric security severity values are normalized as CVSS-like scores: `>=9 critical`, `>=7 high`, `>=4 medium`, `>0 low`.
 
-## Examples
-
-Full scanner examples are available in [docs/EXAMPLE_WORKFLOWS.md](docs/EXAMPLE_WORKFLOWS.md).
-
-### Multiple Scanner Aggregation
+## CodeQL Example
 
 ```yaml
-- name: Quality Gate
-  uses: your-org/QualityGate@v1
-  with:
-    sarif_file: |
-      sarif-results/codeql.sarif
-      sarif-results/trivy.sarif
-      sarif-results/semgrep.sarif
-      sarif-results/checkov.sarif
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    enable_annotations: true
-    json_export_file: qualitygate-report.json
-```
+name: CodeQL Security Scan
 
-### Monorepo
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
 
-```yaml
-- name: Quality Gate
-  uses: your-org/QualityGate@v1
-  with:
-    sarif_file: services/**/sarif
-    severity_threshold: medium
-    ignore_paths: "**/test/**,**/fixtures/**,third_party/**"
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### Reusable Workflow Caller
-
-```yaml
-jobs:
-  security:
-    uses: your-org/QualityGate/.github/workflows/examples.yml@v1
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-```
-
-## Scanner Compatibility
-
-| Scanner | Status | Notes |
-| ------- | ------ | ----- |
-| CodeQL | Supported | Uses rule metadata and `security-severity` when available. |
-| Trivy | Supported | Supports CVE SARIF and numeric severities. |
-| Snyk | Supported | Supports Snyk SARIF severity properties. |
-| Semgrep | Supported | Supports SARIF levels and rule metadata. |
-| Checkov | Supported | Supports IaC SARIF output and rule IDs. |
-| Grype | Supported | Supports vulnerability SARIF output. |
-| Kubescape | Supported | Supports SARIF 2.1.0 output. |
-| DevSkim | Supported | Supports SARIF levels and rule metadata. |
-| Any SARIF 2.1.0 tool | Supported | Parsed best-effort from SARIF standard fields. |
-
-## PR Comment Format
-
-Failed gates produce comments like:
-
-```markdown
-# 🚨 Quality Gate Failed
-
-## Security Summary
-
-| Severity | Count |
-| -------- | ----- |
-| Critical | 2 |
-| High | 5 |
-| Medium | 7 |
-| Low | 10 |
-
-## Findings
-
-| Severity | Rule | File | Line | Message |
-| -------- | ---- | ---- | ---- | ------- |
-```
-
-Passed gates produce:
-
-```markdown
-# ✅ Quality Gate Passed
-
-No findings exceeded configured threshold.
-```
-
-The generated comment also includes shield badges, scanner metadata, processed SARIF files, execution duration, collapsible grouped findings, and truncation when findings exceed `max_findings_display`.
-
-## Enterprise Deployment
-
-Recommended permissions:
-
-```yaml
 permissions:
   contents: read
   pull-requests: write
+  security-events: read
   checks: write
+
+jobs:
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript
+
+      - uses: github/codeql-action/autobuild@v4
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results.sarif
+
+      - name: QualityGate
+        uses: narendra486/qualitygate@v1
+        with:
+          sarif_file: codeql-results.sarif
+          severity_threshold: medium
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-For push-only workflows, omit `pull-requests: write` and set `pr_comment: false`.
-
-For self-hosted runners:
-
-- Ensure Node.js 24 compatible GitHub Actions runner support.
-- Store SARIF files in the workspace before running QualityGate.
-- Avoid scanner uploads as the enforcement source; QualityGate reads local SARIF files only.
-
-## Security Considerations
-
-- No unsafe `eval`.
-- No shell execution using user-controlled inputs.
-- SARIF files are read through filesystem APIs.
-- GitHub API calls use retry logic and pagination.
-- Workflows in this repository pin third-party actions to commit SHAs.
-- Use least-privilege token permissions.
-- Treat SARIF content as untrusted; QualityGate escapes markdown table-sensitive output.
-
-## Architecture
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Development
-
-```bash
-npm install
-npm run build
-npm test
-npm run package
-```
-
-The marketplace entrypoint is `dist/index.js`, produced with `@vercel/ncc`.
-
-## Troubleshooting
-
-| Symptom | Resolution |
-| ------- | ---------- |
-| `No SARIF files found` | Confirm `sarif_file` points to an existing file, directory, glob, or multiline list. |
-| PR comment missing | Ensure the event is `pull_request`, `github_token` is provided, and `pull-requests: write` is granted. |
-| Check run missing | Grant `checks: write`; annotations still work without creating check runs. |
-| Unexpected severity | Inspect SARIF `level`, `properties.security-severity`, and rule metadata. |
-| Baseline not suppressing | Baseline matching uses stable fingerprints from tool, rule, file, line, and message. |
-| Malformed SARIF | QualityGate skips malformed files with warnings and continues processing valid SARIF. |
 
 ## Error Format
 
-QualityGate uses GitHub-native annotations for action errors and warnings. Messages follow this format:
+QualityGate uses GitHub-native annotations:
 
 ```text
 [QG004] Quality Gate failed: ❌ FAIL | Threshold: high | Critical: 0 | High: 1 | Medium: 0 | Low: 0
@@ -274,16 +150,23 @@ QualityGate uses GitHub-native annotations for action errors and warnings. Messa
 
 | Code | Level | Meaning |
 | ---- | ----- | ------- |
-| `QG001` | Error | Invalid QualityGate input, such as an unsupported severity or invalid integer. |
-| `QG002` | Error | No SARIF files were found from `sarif_file`. |
-| `QG003` | Warning | Malformed or non-standard SARIF content was skipped or parsed best-effort. |
-| `QG004` | Error | The quality gate failed because findings exceeded policy. |
-| `QG005` | Warning | GitHub integration issue, such as skipped PR comments or check-run creation failure. |
-| `QG006` | Warning | Step summary could not be written. |
-| `QG007` | Warning | SARIF file discovery issue, such as an invalid glob pattern. |
-| `QG999` | Error | Unexpected QualityGate action failure. |
+| `QG001` | Error | Invalid input. |
+| `QG002` | Error | No SARIF files found. |
+| `QG003` | Warning | Malformed SARIF skipped or parsed best-effort. |
+| `QG004` | Error | Quality gate policy failed. |
+| `QG005` | Warning | GitHub integration warning. |
+| `QG006` | Warning | Step summary warning. |
+| `QG007` | Warning | SARIF file discovery warning. |
+| `QG999` | Error | Unexpected action failure. |
 
-Errors use `core.error()` and `core.setFailed()`; blocking failures also exit with `process.exit(1)`. Warnings use `core.warning()`.
+## Development
+
+```bash
+npm ci
+npm run lint
+npm test
+npm run package
+```
 
 ## License
 
