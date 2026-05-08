@@ -178,7 +178,7 @@ export class MarkdownFormatter {
     }
 
     private escape(value: string): string {
-        return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+        return value.replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;');
     }
 
     private renderTemplate(template: string, context: MarkdownContext): string {

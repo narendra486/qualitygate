@@ -76,4 +76,23 @@ describe('MarkdownFormatter', () => {
 
         expect(comment).toContain('Findings truncated: showing 1 of 3');
     });
+
+    it('escapes markdown table separators without backslash sanitization', () => {
+        const comment = formatter.formatPrComment({
+            ...context,
+            findings: [
+                {
+                    ...findings[0]!,
+                    ruleName: 'Rule | with | separators',
+                    file: 'src\\app|main.ts',
+                    message: 'First line\nSecond | line',
+                },
+            ],
+        });
+
+        expect(comment).toContain('Rule &#124; with &#124; separators');
+        expect(comment).toContain('src\\app&#124;main.ts');
+        expect(comment).toContain('First line Second &#124; line');
+        expect(comment).not.toContain('\\|');
+    });
 });
