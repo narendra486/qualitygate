@@ -1,7 +1,7 @@
 {
   "name": "qualitygate",
   "version": "1.0.0",
-  "description": "Enterprise-grade GitHub Action for SARIF-based security quality gates supporting CodeQL, Snyk, Trivy, Semgrep, Checkov, Grype, and other scanners.",
+  "description": "Universal SARIF security quality gate for CodeQL, Snyk, Trivy, Semgrep, Checkov, Grype, and more.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

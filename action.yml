@@ -1,5 +1,5 @@
 name: 'QualityGate - Universal SARIF Security Quality Gate'
-description: 'Enterprise-grade GitHub Action for SARIF-based security quality gates supporting CodeQL, Snyk, Trivy, Semgrep, Checkov, Grype, and other scanners.'
+description: 'Universal SARIF security quality gate for CodeQL, Snyk, Trivy, Semgrep, Checkov, Grype, and more.'
 author: 'QualityGate maintainers'
 inputs:
   sarif_file:
