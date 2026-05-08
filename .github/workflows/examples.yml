@@ -83,7 +83,6 @@ jobs:
           sarif_file: |
             examples/sarif/codeql.sarif
             examples/sarif/trivy.sarif
-          baseline_file: examples/baselines/baseline.sarif
           severity_threshold: high
           fail_on_count: 20
           github_token: ${{ secrets.GITHUB_TOKEN }}

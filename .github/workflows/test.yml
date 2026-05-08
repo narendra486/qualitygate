@@ -32,7 +32,6 @@ jobs:
         id: qualitygate
         with:
           sarif_file: examples/sarif
-          baseline_file: examples/baselines/baseline.sarif
           severity_threshold: high
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pr_comment: false

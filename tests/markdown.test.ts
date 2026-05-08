@@ -36,7 +36,7 @@ const context: MarkdownContext = {
     processedFiles: ['trivy.sarif'],
     skippedFiles: [],
     durationMs: 1234,
-    config: { severityThreshold: 'high', mode: 'block', newFindingsOnly: true, maxFindingsDisplay: 100 },
+    config: { severityThreshold: 'high', mode: 'block', maxFindingsDisplay: 100 },
 };
 
 describe('MarkdownFormatter', () => {
@@ -71,7 +71,7 @@ describe('MarkdownFormatter', () => {
         const comment = formatter.formatPrComment({
             ...context,
             findings: manyFindings,
-            config: { severityThreshold: 'high', mode: 'block', newFindingsOnly: true, maxFindingsDisplay: 1 },
+            config: { severityThreshold: 'high', mode: 'block', maxFindingsDisplay: 1 },
         });
 
         expect(comment).toContain('Findings truncated: showing 1 of 3');

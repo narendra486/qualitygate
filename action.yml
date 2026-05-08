@@ -33,13 +33,6 @@ inputs:
     description: 'Whether to deduplicate findings (true/false)'
     required: false
     default: 'true'
-  baseline_file:
-    description: 'Optional SARIF baseline file, directory, glob, or multiline list.'
-    required: false
-  new_findings_only:
-    description: 'When true, suppress findings present in baseline_file so only new findings can fail the gate.'
-    required: false
-    default: 'true'
   enable_annotations:
     description: 'Whether to create GitHub workflow annotations.'
     required: false

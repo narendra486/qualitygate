@@ -14,7 +14,6 @@ QualityGate works only from SARIF files. It does not require GitHub Advanced Sec
 - Normalize SARIF severity across scanners
 - Deduplicate findings with stable fingerprints
 - Ignore configured rules and paths
-- Suppress baseline findings from a baseline SARIF
 - Generate professional PR comments with badges, emojis, collapsible sections, metadata, and truncation
 - Generate GitHub Step Summary with threshold configuration, blocked status, duration, and processed files
 - Emit GitHub workflow annotations and optional check runs
@@ -68,8 +67,6 @@ jobs:
 | `ignore_rule_ids` | No | | Comma-separated rule IDs to ignore. |
 | `ignore_paths` | No | | Comma-separated glob patterns for finding paths to ignore. |
 | `deduplicate` | No | `true` | Deduplicate findings before evaluation. |
-| `baseline_file` | No | | SARIF baseline file, directory, glob, or multiline list. |
-| `new_findings_only` | No | `true` | When `baseline_file` is provided, suppress baseline findings so only new findings can fail PRs. |
 | `enable_annotations` | No | `true` | Create workflow annotations for findings. |
 | `enable_step_summary` | No | `true` | Write GitHub Step Summary. |
 | `markdown_template` | No | | Reserved for custom enterprise markdown templates. |
@@ -80,7 +77,7 @@ jobs:
 
 | Output | Description |
 | ------ | ----------- |
-| `total_findings` | Total finding count after filtering, baseline suppression, and deduplication. |
+| `total_findings` | Total finding count after filtering and deduplication. |
 | `critical_count` | Critical finding count. |
 | `high_count` | High finding count. |
 | `medium_count` | Medium finding count. |
@@ -160,22 +157,6 @@ Full scanner examples are available in [docs/EXAMPLE_WORKFLOWS.md](docs/EXAMPLE_
     ignore_paths: "**/test/**,**/fixtures/**,third_party/**"
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
-
-### Baseline Suppression
-
-```yaml
-- name: Quality Gate
-  uses: your-org/QualityGate@v1
-  with:
-    sarif_file: current-results
-    baseline_file: examples/baselines/baseline.sarif
-    new_findings_only: true
-    severity_threshold: high
-    mode: block
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-`new_findings_only` defaults to `true`. A `baseline_file` is still required to know which findings are old. Without a baseline SARIF, QualityGate treats current findings as new.
 
 ### Reusable Workflow Caller
 
